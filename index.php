@@ -5,6 +5,48 @@
  */
 
 require_once 'includes/config.php';
+require_once 'includes/db.php';
+
+if (isset($_GET['logout']) && $settings['auth_mode']) {
+    unset($_SESSION['student_id']);
+    unset($_SESSION['student_name']);
+    resetProgress();
+    header('Location: index.php');
+    exit;
+}
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['student_login']) && $settings['auth_mode']) {
+    $student_id = trim($_POST['student_id']);
+    $student_name = trim($_POST['student_name']);
+    if (!empty($student_id) && !empty($student_name)) {
+        if ($pdo) {
+            try {
+                $stmt = $pdo->prepare("INSERT INTO students (student_id, name) VALUES (?, ?) ON DUPLICATE KEY UPDATE name = ?");
+                $stmt->execute([$student_id, $student_name, $student_name]);
+                
+                $_SESSION['student_id'] = $student_id;
+                $_SESSION['student_name'] = $student_name;
+                
+                // Load past progress
+                $stmt = $pdo->prepare("SELECT question_id FROM student_progress WHERE student_id = ? AND is_correct = 1");
+                $stmt->execute([$student_id]);
+                $progress = $stmt->fetchAll(PDO::FETCH_COLUMN);
+                
+                resetProgress();
+                foreach ($progress as $q_id) {
+                    $_SESSION['progress'][$q_id] = true;
+                }
+                
+                header('Location: index.php');
+                exit;
+            } catch (PDOException $e) {
+                $login_error = "Database Error: " . $e->getMessage();
+            }
+        }
+    } else {
+        $login_error = "Please fill in all fields.";
+    }
+}
 
 // Handle AJAX requests
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
@@ -19,6 +61,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         
         if ($is_correct) {
             $_SESSION['progress'][$question_id] = true;
+            global $settings, $pdo;
+            if ($settings['auth_mode'] && isset($_SESSION['student_id']) && $pdo) {
+                try {
+                    $stmt = $pdo->prepare("INSERT IGNORE INTO student_progress (student_id, student_name, question_id, is_correct) VALUES (?, ?, ?, 1)");
+                    $stmt->execute([$_SESSION['student_id'], $_SESSION['student_name'], $question_id]);
+                } catch(PDOException $e) { }
+            }
         }
         
         $task_progress = getTaskProgress($task_id);
@@ -60,6 +109,50 @@ if ($current_task < 1 || $current_task > count($TASKS)) {
 }
 
 $total_progress = getTotalProgress();
+
+if ($settings['auth_mode'] && !isset($_SESSION['student_id'])) {
+?>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Login - <?php echo LAB_TITLE; ?></title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 100%); color: #e0e0e0; min-height: 100vh; display: flex; align-items: center; }
+        .login-card { background: #1a1a2e; border-radius: 12px; padding: 2rem; max-width: 400px; width: 100%; margin: 0 auto; box-shadow: 0 10px 30px rgba(0,0,0,0.5); border: 1px solid rgba(0,168,107,0.2); }
+        .form-control { background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); color: white; }
+        .form-control:focus { background: rgba(0,0,0,0.4); border-color: #00a86b; color: white; box-shadow: none; }
+        .btn-primary { background: #00a86b; border: none; }
+        .btn-primary:hover { background: #00c97b; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="login-card">
+            <h3 class="text-center mb-4" style="color: #00a86b;">Wireshark Lab Access</h3>
+            <?php if (isset($login_error)): ?>
+                <div class="alert alert-danger"><?php echo $login_error; ?></div>
+            <?php endif; ?>
+            <form method="POST">
+                <div class="mb-3">
+                    <label class="form-label">Student ID (Roll Number)</label>
+                    <input type="text" name="student_id" class="form-control" required placeholder="e.g. ICT001">
+                </div>
+                <div class="mb-4">
+                    <label class="form-label">Full Name</label>
+                    <input type="text" name="student_name" class="form-control" required placeholder="e.g. John Doe">
+                </div>
+                <button type="submit" name="student_login" class="btn btn-primary w-100">Start Lab</button>
+            </form>
+        </div>
+    </div>
+</body>
+</html>
+<?php
+    exit;
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -579,9 +672,18 @@ $total_progress = getTotalProgress();
                         <i class="bi bi-speedometer2"></i>
                         <?php echo LAB_DIFFICULTY; ?>
                     </span>
-                    <button class="btn-reset" onclick="resetLab()">
-                        <i class="bi bi-arrow-counterclockwise"></i> Reset
-                    </button>
+                    <?php if ($settings['auth_mode'] && isset($_SESSION['student_name'])): ?>
+                        <span class="me-2 d-none d-lg-inline-block text-muted" style="font-size: 0.85rem;">
+                            <i class="bi bi-person-circle"></i> <?php echo htmlspecialchars($_SESSION['student_name']); ?>
+                        </span>
+                        <a href="?logout=1" class="btn-reset text-decoration-none d-inline-block">
+                            <i class="bi bi-box-arrow-right"></i> Logout
+                        </a>
+                    <?php else: ?>
+                        <button class="btn-reset" onclick="resetLab()">
+                            <i class="bi bi-arrow-counterclockwise"></i> Reset
+                        </button>
+                    <?php endif; ?>
                 </div>
             </div>
         </div>

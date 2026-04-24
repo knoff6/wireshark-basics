@@ -170,20 +170,7 @@ require_once 'includes/config.php';
             </div>
         </div>
         
-        <!-- Note for Instructors -->
-        <div class="alert mt-4" style="background: rgba(255,193,7,0.15); border: 1px solid rgba(255,193,7,0.3); color: #ffc107;">
-            <h6 class="alert-heading">
-                <i class="bi bi-person-badge me-2"></i>Note for Instructors
-            </h6>
-            <p class="mb-0">
-                Place the PCAP files in the <code>assets/</code> directory. You can obtain these files from:
-            </p>
-            <ul class="mb-0 mt-2">
-                <li>TryHackMe Wireshark: The Basics room (if subscribed)</li>
-                <li>Wireshark sample captures: <a href="https://wiki.wireshark.org/SampleCaptures" target="_blank" class="text-warning">wiki.wireshark.org/SampleCaptures</a></li>
-                <li>Create your own captures with similar characteristics</li>
-            </ul>
-        </div>
+
         
         <!-- Footer -->
         <div class="text-center text-muted py-4">
