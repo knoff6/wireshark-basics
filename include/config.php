@@ -17,6 +17,7 @@ if (!isset($_SESSION['completed_tasks'])) {
 }
 
 // Lab Configuration
+define('GOOGLE_CLIENT_ID', '948263118207-l1f83088794klh0cbl5ll72dum7bp8bl.apps.googleusercontent.com');
 define('LAB_TITLE', 'Wireshark: The Basics');
 define('LAB_DESCRIPTION', 'Learn the basics of Wireshark and how to analyze protocols and PCAPs.');
 define('LAB_DIFFICULTY', 'Easy');
@@ -34,8 +35,8 @@ $TASKS = [
             <div class="alert alert-info">
                 <strong>📁 Lab Files:</strong> There are two capture files provided:
                 <ul>
-                    <li><a href="assets/http1.pcapng" download><code>http1.pcapng</code></a> - Use this to follow along with the demonstrations</li>
-                    <li><a href="assets/Exercise.pcapng" download><code>Exercise.pcapng</code></a> - Use this to answer the questions</li>
+                    <li><a href="https://drive.google.com/file/d/1KfyoFyUZxW4pPf4dEVezUPJ1c4-gy1Zj/view?usp=sharing" download><code>http1.pcapng</code></a> - Use this to follow along with the demonstrations</li>
+                    <li><a href="https://drive.google.com/file/d/1L6NQXlC_0oMl_mCT5Xr9rBxgJxN3ylbD/view?usp=sharing" download><code>Exercise.pcapng</code></a> - Use this to answer the questions</li>
                 </ul>
             </div>
             
@@ -309,8 +310,8 @@ $TASKS = [
             [
                 'id' => 'q4_4',
                 'question' => 'Look at the expert info section. What is the number of warnings?',
-                'answer' => '1636',
-                'hint' => 'Go to Analyze → Expert Information and count the Warnings.'
+                'answer' => ['1636', '13'],
+                'hint' => 'Go to Analyze → Expert Information and count the Warnings. Note: The exact number may vary between older (e.g. 3.2.x) and newer (e.g. 4.6.x) Wireshark versions.'
             ]
         ]
     ],
@@ -389,8 +390,8 @@ $TASKS = [
             [
                 'id' => 'q5_2',
                 'question' => 'What is the number of displayed packets?',
-                'answer' => '1089',
-                'hint' => 'With http filter applied, check the bottom right of the status bar.'
+                'answer' => ['1089', '54'],
+                'hint' => 'With http filter applied, check the bottom right of the status bar. Note: The exact number may vary between older and newer Wireshark versions.'
             ],
             [
                 'id' => 'q5_3',
@@ -454,9 +455,15 @@ function checkAnswer($task_id, $question_id, $user_answer) {
     
     foreach ($TASKS[$task_id]['questions'] as $question) {
         if ($question['id'] === $question_id) {
-            $correct = strtolower(trim($question['answer']));
             $submitted = strtolower(trim($user_answer));
-            return $correct === $submitted;
+            $answers = is_array($question['answer']) ? $question['answer'] : [$question['answer']];
+            
+            foreach ($answers as $correct) {
+                if (strtolower(trim($correct)) === $submitted) {
+                    return true;
+                }
+            }
+            return false;
         }
     }
     return false;
