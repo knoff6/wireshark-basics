@@ -34,8 +34,8 @@ $TASKS = [
             <div class="alert alert-info">
                 <strong>📁 Lab Files:</strong> There are two capture files provided:
                 <ul>
-                    <li><code>http1.pcapng</code> - Use this to follow along with the demonstrations</li>
-                    <li><code>Exercise.pcapng</code> - Use this to answer the questions</li>
+                    <li><a href="assets/http1.pcapng" download><code>http1.pcapng</code></a> - Use this to follow along with the demonstrations</li>
+                    <li><a href="assets/Exercise.pcapng" download><code>Exercise.pcapng</code></a> - Use this to answer the questions</li>
                 </ul>
             </div>
             
